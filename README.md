@@ -45,6 +45,7 @@ Setup PHP with required extensions, php.ini configuration, code-coverage support
   - [Verbose Setup](#verbose-setup)
   - [Multi-Arch Setup](#multi-arch-setup)
   - [Self Hosted Setup](#self-hosted-setup)
+  - [WarpBuild Setup](#warpbuild-setup)
   - [Local Testing Setup](#local-testing-setup)
   - [JIT Configuration](#jit-configuration)
   - [Cache Extensions](#cache-extensions)
@@ -746,6 +747,14 @@ jobs:
 > - Do not set up multiple self-hosted runners on a single server instance as parallel workflows will conflict with each other.
 > - Do not set up self-hosted runners on the side of your development environment or your production server.
 > - Avoid using the same labels for your `self-hosted` runners which are used by `GitHub-hosted` runners.
+
+### WarpBuild Setup
+
+This fork automatically uses the upstream prebuilt PHP archives on verified WarpBuild Ubuntu 22.04, 24.04 and 26.04 runner images for x86_64 and ARM64. No additional input or WarpBuild cache action is required. Existing PHP installations are reused as usual; when installation is needed, the action uses the same archive installer as GitHub-hosted runners.
+
+Automatic detection requires matching runner image metadata, the WarpBuild runner marker and a matching registration for the parent GitHub Actions worker. Containers, `act` and unsupported images keep the existing installation path. Archive support on WarpBuild is experimental.
+
+Set the environment variable `use_builds_cache: 'false'` to disable the archive path. An explicit `runner: self-hosted` also disables automatic detection. This does not change Composer dependency caching or extension caching.
 
 ### Local Testing Setup
 

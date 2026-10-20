@@ -46,6 +46,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Test runner detection
+        if: runner.os != 'Windows'
+        shell: bash
+        run: bash __tests__/scripts/runner.test.sh
+
       - name: Prettier Format Check
         run: npm run format-check
 
