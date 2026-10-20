@@ -46,6 +46,7 @@ Setup PHP with required extensions, php.ini configuration, code-coverage support
   - [Multi-Arch Setup](#multi-arch-setup)
   - [Self Hosted Setup](#self-hosted-setup)
   - [WarpBuild Setup](#warpbuild-setup)
+  - [Ubicloud Setup](#ubicloud-setup)
   - [Local Testing Setup](#local-testing-setup)
   - [JIT Configuration](#jit-configuration)
   - [Cache Extensions](#cache-extensions)
@@ -755,6 +756,14 @@ This fork automatically uses the upstream prebuilt PHP archives on verified Warp
 Automatic detection requires matching runner image metadata, the WarpBuild runner marker and a matching registration for the parent GitHub Actions worker. Containers, `act` and unsupported images keep the existing installation path. Archive support on WarpBuild is experimental.
 
 Set the environment variable `use_builds_cache: 'false'` to disable the archive path. An explicit `runner: self-hosted` also disables automatic detection. This does not change Composer dependency caching or extension caching.
+
+### Ubicloud Setup
+
+This fork also automatically uses the upstream prebuilt PHP archives on detected Ubicloud Ubuntu 22.04, 24.04 and 26.04 runner images for x86_64 and ARM64, including image metadata such as `ubuntu24-arm64`. Existing PHP installations are reused as usual. No additional cache action is required.
+
+Detection requires the presence of `UBICLOUD_RUNTIME_TOKEN` and `UBICLOUD_CACHE_URL`, a runner name matching Ubicloud's `gr` identifier format, matching image metadata and a matching registration for the parent GitHub Actions worker. The runtime token is not printed, including in trace mode. Containers, `act` and unsupported images keep the existing installation path. Set `use_builds_cache: 'false'` or explicitly set `runner: self-hosted` in the action's environment to disable automatic archive selection.
+
+Ubicloud archive support is experimental: detection and installer selection are covered by local tests, but installation compatibility and performance still need validation on an actual Ubicloud runner. This does not change Composer dependency caching or extension caching.
 
 ### Local Testing Setup
 

@@ -100,5 +100,43 @@ check_case 'Depot opt-in still works' 'github:true:archive' 0 RUNNER_NAME=depot-
 check_case 'Unverified runner cannot force GitHub mode' 'Runner set as github in self-hosted environment' 1 RUNNER_NAME=custom-runner WARPBUILD_RUNNER_VERIFICATION_TOKEN= runner=github
 check_case 'Trace does not expose WarpBuild marker' 'github:true:archive' 0 SETUP_PHP_TRACE=1
 
+check_ubicloud_case() {
+  local name="$1" expected="$2"
+  shift 2
+  check_case "Ubicloud $name" "$expected" 0 \
+    WARPBUILD_RUNNER_VERIFICATION_TOKEN= RUNNER_NAME=gr0123456789abcdefghjkmnpq \
+    UBICLOUD_RUNTIME_TOKEN=test-marker UBICLOUD_CACHE_URL=https://console.ubicloud.com/runtime/github/ "$@"
+}
+
+check_ubicloud_case 'uses archives automatically' 'github:true:archive'
+check_ubicloud_case 'PHP 8.1' 'github:true:archive' TEST_PHP_VERSION=8.1
+check_ubicloud_case 'PHP 8.3' 'github:true:archive' TEST_PHP_VERSION=8.3
+for release in 22 24 26; do
+  check_ubicloud_case "Ubuntu $release.04 x64" 'github:true:archive' VERSION_ID="$release.04" ImageOS="ubuntu$release"
+  check_ubicloud_case "Ubuntu $release.04 ARM64" 'github:true:archive' VERSION_ID="$release.04" ImageOS="ubuntu$release-arm64" TEST_ARCH=aarch64
+done
+check_ubicloud_case 'builds cache opt-in' 'github:true:archive' use_builds_cache=true
+check_ubicloud_case 'builds cache opt-out' 'self-hosted:false:packages' use_builds_cache=false
+check_ubicloud_case 'legacy builds cache opt-out' 'self-hosted:false:packages' use_package_cache=false
+check_ubicloud_case 'explicit self-hosted runner' 'self-hosted:false:packages' runner=self-hosted
+check_ubicloud_case 'uppercase self-hosted runner' 'self-hosted:false:packages' RUNNER=self-hosted
+check_ubicloud_case 'missing runtime token' 'self-hosted:false:packages' UBICLOUD_RUNTIME_TOKEN=
+check_ubicloud_case 'missing cache URL' 'self-hosted:false:packages' UBICLOUD_CACHE_URL=
+check_ubicloud_case 'unrecognized runner name' 'self-hosted:false:packages' RUNNER_NAME=ubicloud-test
+check_ubicloud_case 'truncated runner ID' 'self-hosted:false:packages' RUNNER_NAME=gr0123456789
+check_ubicloud_case 'invalid runner ID alphabet' 'self-hosted:false:packages' RUNNER_NAME=gr0123456789abcdefgijkmnpq
+check_ubicloud_case 'mismatched registration' 'self-hosted:false:packages' TEST_AGENT_NAME=gr0123456789abcdefghjkmnps
+check_ubicloud_case 'unreadable registration' 'self-hosted:false:packages' TEST_CONFIG_READABLE=false
+check_ubicloud_case 'no worker ancestor' 'self-hosted:false:packages' TEST_WORKER_ANCESTOR=false
+check_ubicloud_case 'non-Ubuntu image' 'self-hosted:false:packages' ID=debian
+check_ubicloud_case 'unsupported Ubuntu release' 'self-hosted:false:packages' VERSION_ID=20.04 ImageOS=ubuntu20
+check_ubicloud_case 'missing image version' 'self-hosted:false:packages' ImageVersion=
+check_ubicloud_case 'mismatched image release' 'self-hosted:false:packages' ImageOS=ubuntu24
+check_ubicloud_case 'ARM64 image on x64' 'self-hosted:false:packages' ImageOS=ubuntu26-arm64
+check_ubicloud_case 'unsupported architecture' 'self-hosted:false:packages' TEST_ARCH=s390x
+check_ubicloud_case 'container' 'self-hosted:false:packages' CONTAINER=true
+check_ubicloud_case 'act' 'self-hosted:false:packages' ACT=true
+check_ubicloud_case 'trace does not expose runtime token' 'github:true:archive' SETUP_PHP_TRACE=1
+
 printf '%s cases, %s failures\n' "$cases" "$failures"
 [ "$failures" -eq 0 ]

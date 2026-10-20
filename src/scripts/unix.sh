@@ -67,7 +67,7 @@ check_builds_cache_runner() {
     executable="$(readlink -f "/proc/$pid/exe")" || return 1
     if [[ "$executable" = */bin/Runner.Worker ]]; then
       jq -e --arg name "${RUNNER_NAME:-}" \
-        '.AgentName == $name and (.AgentName | test("^(blacksmith|depot|warp)-"))' \
+        '.AgentName == $name and (.AgentName | test("^(blacksmith|depot|warp)-|^gr[0-9a-hjkmnp-tv-z]{24}$"))' \
         "${executable%/bin/Runner.Worker}/.runner" >/dev/null 2>&1
       return $?
     fi
@@ -90,15 +90,20 @@ read_env() {
      ( -n "$RUNNER_ENVIRONMENT" && "$RUNNER_ENVIRONMENT" = "self-hosted" ) ||
      -n "$ACT" || -n "$CONTAINER" ]] && _runner=self-hosted || _runner=github
 
-  # Use prebuilt PHP archives on verified WarpBuild Ubuntu runner images.
+  # Use prebuilt PHP archives on verified WarpBuild and Ubicloud Ubuntu runner images.
+  local builds_cache_arch
+  builds_cache_arch="$(uname -m)"
   if [[ $_runner = "self-hosted" && "${runner:-${RUNNER:-github}}" = "github" &&
         "${use_builds_cache:-true}" = "true" && "${ID:-}" = "ubuntu" &&
         "${VERSION_ID:-}" =~ ^(22|24|26)\.04$ &&
-        "${ImageOS:-}" = "ubuntu${VERSION_ID%%.*}" && -n "${ImageVersion:-}" &&
+        ( "${ImageOS:-}" = "ubuntu${VERSION_ID%%.*}" ||
+          ( "$builds_cache_arch" = "aarch64" && "${ImageOS:-}" = "ubuntu${VERSION_ID%%.*}-arm64" ) ) &&
+        -n "${ImageVersion:-}" &&
         -z "$ACT" && -z "$CONTAINER" &&
-        -n "${WARPBUILD_RUNNER_VERIFICATION_TOKEN:+present}" &&
-        "${RUNNER_NAME:-}" =~ ^warp- &&
-        "$(uname -m)" =~ ^(x86_64|aarch64)$ ]] && check_builds_cache_runner; then
+        ( ( -n "${WARPBUILD_RUNNER_VERIFICATION_TOKEN:+present}" && "${RUNNER_NAME:-}" =~ ^warp- ) ||
+          ( -n "${UBICLOUD_RUNTIME_TOKEN:+present}" && -n "${UBICLOUD_CACHE_URL:+present}" &&
+            "${RUNNER_NAME:-}" =~ ^gr[0-9a-hjkmnp-tv-z]{24}$ ) ) &&
+        "$builds_cache_arch" =~ ^(x86_64|aarch64)$ ]] && check_builds_cache_runner; then
     _runner=github
     builds_cache_warning=true
   fi
